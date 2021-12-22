@@ -1,9 +1,10 @@
 import axios from 'axios';
-import { Request } from 'express';
+import {Request} from 'express';
 import _ from 'lodash';
 import config from '../config';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
+
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 export async function forwardEvent(req: Request): Promise<void> {
   if (config.disableTelemetry) {
@@ -33,11 +34,17 @@ export async function forwardEvent(req: Request): Promise<void> {
   };
 
   try {
-    await axios.post(`${config.infracostDashboardApiEndpoint}/event`, body, {
-      headers: {
-        'X-Api-Key': config.infracostAPIKey,
-        'X-Cloud-Pricing-Api-Version': process.env.npm_package_version,
-      },
+    const headers: { [key: string]: any } = {
+      'X-Api-Key': config.infracostAPIKey,
+      'X-Cloud-Pricing-Api-Version': process.env.npm_package_version,
+    };
+
+    if (req.header('x-infracost-trace-id') != null) {
+      headers['x-infracost-trace-id'] = req.header('x-infracost-trace-id');
+    }
+
+    await axios.post(`${(config.infracostDashboardApiEndpoint)}/event`, body, {
+      headers,
     });
   } catch (err) {
     config.logger.error(`Error forwarding event to Infracost API: ${err}`);
@@ -70,5 +77,6 @@ export async function sendEvent(event: string, env?: any): Promise<void> {
     config.logger.error(`Error sending event to Infracost API: ${err}`);
   }
 }
+
 /* eslint-enable @typescript-eslint/no-explicit-any */
 /* eslint-enable @typescript-eslint/explicit-module-boundary-types */

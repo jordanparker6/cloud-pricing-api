@@ -11,6 +11,10 @@ import { Logger } from 'pino';
 const DEFAULT_TRUNCATE_LENGTH = 4096;
 
 function truncate(str: string, l = DEFAULT_TRUNCATE_LENGTH): string {
+  if (str == null) {
+    return ""
+  }
+
   if (str.length <= l) {
     return str;
   }
@@ -30,9 +34,15 @@ export default class ApolloLogger implements ApolloServerPlugin {
       return {};
     }
 
-    const query = truncate(
-      prettier.format(requestContext.request.query || '', { parser: 'graphql' })
-    );
+    let q = "";
+    try {
+      q = prettier.format(requestContext.request.query || '', { parser: 'graphql' })
+    } catch (e) {
+      const el = truncate(requestContext.request.query || '')
+      logger.debug(`invalid query provided: ${el}`)
+    }
+
+    const query = truncate(q);
     const vars = truncate(
       JSON.stringify(requestContext.request.variables || {}, null, 2)
     );
